@@ -230,6 +230,29 @@
     </style>
 </head>
 <body class="bg-red font-poppins overflow-y-auto">
+    <div id="desktop-block" class="hidden fixed inset-0 z-[10000] flex-col items-center justify-center bg-black text-center p-6 select-none">
+        <div class="max-w-md space-y-6">
+            <div class="flex justify-center">
+                <div class="w-16 h-16 bg-brand-red/10 rounded-2xl flex items-center justify-center border border-brand-red/20">
+                    <i data-lucide="smartphone" class="w-8 h-8 text-brand-red"></i>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                <h2 class="text-2xl font-bold tracking-tight text-white font-outfit">Ops... Somente smartphones</h2>
+                <p class="text-sm text-zinc-400 font-light leading-relaxed">
+                    Este aplicativo foi feito exclusivamente para o uso em dispositivos móveis. <br>
+                    <span class="text-white font-medium">Escaneie o qr code e abra o link com seu celular.</span>
+                </p>
+            </div>
+
+            <div class="flex flex-col items-center justify-center bg-zinc-900/50 p-6 rounded-3xl border border-zinc-850 backdrop-blur-sm">
+                <div id="qrcode-container" class="bg-white p-4 rounded-2xl shadow-xl border border-white/10">
+                    </div>
+                <p class="text-xs text-zinc-500 font-mono mt-4">Aponte a câmera para escanear</p>
+            </div>
+        </div>
+    </div>
 
     <div id="loader-overlay" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black">
         <div class="text-center space-y-8 p-8">
@@ -300,36 +323,13 @@
                 url: 'https://dididoingles.github.io/whiteboard-2.0/',
                 message: 'Redirecionando para o Whiteboard...'
             },
-           startclass: {
-                keywords: ['start class', 'start','new class', 'open class', 'star', 'star class'],
-                url: 'https://sites.google.com/view/staffroomdidisenglishlab/register/start-class',
-                message: 'Starting a Class...'
-            },
-            findclass: {
-                keywords: ['find class'],
-                url: 'https://sites.google.com/view/staffroomdidisenglishlab/register/classes',
-                message: 'Finding a Class...'
-            },
-            docs: {
-                keywords: ['open docs', 'google docs','docs'],
-                url: 'https://docs.google.com/',
-                message: 'Opening docs...'
-            },
-             google: {
-                keywords: ['open google','search', 'google'],
-                url: 'https://www.google.com/',
-                message: 'Opening google search...'
-            },
-             gemini: {
-                keywords: ['open assistant','gemini', 'open gemini','call gemini', 'call assistant'],
-                url: 'https://gemini.google.com/',
-                message: 'Connecting assistant...'
-            },
+        
             languagelab: {
                 keywords: ['open lab', 'lab', 'language lab'],
                 url: 'https://sites.google.com/view/languagelabbr/in%C3%ADcio',
                 message: 'Redirecionando para o Lab...'
             }
+            
         }; 
 
         // ========== BANCO DE ÁUDIOS NATIVOS DO MARS ==========
@@ -827,6 +827,40 @@ function resetSpeechRecognition() {
         console.error("Erro ao iniciar nova instância do microfone:", e);
     }
 }
+// ========== SISTEMA DE VERIFICAÇÃO E BLOQUEIO DESKTOP ==========
+function verificarDispositivo() {
+    // Detecta celulares comuns (iOS, Android, etc) e telas menores que 1024px
+    const IsMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const IsSmallScreen = window.innerWidth < 1024;
+
+    if (!IsMobile && !IsSmallScreen) {
+        // Se NÃO for mobile e NÃO for tela pequena, ativa o bloqueio
+        const blockOverlay = document.getElementById('desktop-block');
+        const qrContainer = document.getElementById('qrcode-container');
+        
+        if (blockOverlay && qrContainer) {
+            // Exibe a tela de bloqueio mudando a classe do Tailwind
+            blockOverlay.classList.remove('hidden');
+            blockOverlay.classList.add('flex');
+            
+            // Pega a URL atual do seu app para gerar o QR Code dinamicamente
+            const currentUrl = encodeURIComponent(window.location.href);
+            
+            // Injeta a imagem do QR Code usando a API do qrserver (usando seu vermelho #c20000)
+            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${currentUrl}&color=c20000" alt="QR Code" class="w-[180px] h-[180px]" />`;
+            
+            // Trava o carregamento dos outros sistemas do Mars
+            if (recognition) {
+                shouldListen = false;
+                try { recognition.stop(); } catch(e) {}
+            }
+            throw new Error("Aplicativo suspenso: Acesso restrito a dispositivos móveis.");
+        }
+    }
+}
+
+// Executa a checagem imediatamente assim que o script é lido
+verificarDispositivo();
     </script>
 </body>
 </html>
